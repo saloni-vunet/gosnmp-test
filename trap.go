@@ -240,7 +240,7 @@ func (t *TrapListener) listenUDP(addr string) error {
 			return nil
 
 		default:
-			var buf [4096]byte
+			var buf [8192]byte
 			rlen, remote, err := t.conn.ReadFromUDP(buf[:])
 			if err != nil {
 				if atomic.LoadInt32(&t.finish) == 1 {
@@ -342,7 +342,7 @@ func (t *TrapListener) reportAuthoritativeEngineID(trap *SnmpPacket, snmpEngineI
 
 func (t *TrapListener) handleTCPRequest(conn net.Conn) {
 	// Make a buffer to hold incoming data.
-	buf := make([]byte, 4096)
+	buf := make([]byte, 8192)
 	// Read the incoming connection into the buffer.
 	reqLen, err := conn.Read(buf)
 	if err != nil {
