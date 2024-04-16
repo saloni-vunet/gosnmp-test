@@ -216,7 +216,7 @@ func (t *TrapListener) SendUDP(packet *SnmpPacket, addr *net.UDPAddr) error {
 	return nil
 }
 
-func (t *TrapListener) listenUDP(addr string) error {
+func (t *TrapListener) listenUDP(addr string, maxSize int64) error {
 	// udp
 
 	udpAddr, err := net.ResolveUDPAddr(t.proto, addr)
@@ -240,7 +240,7 @@ func (t *TrapListener) listenUDP(addr string) error {
 			return nil
 
 		default:
-			var buf [8192]byte
+			var buf [maxSize]byte
 			rlen, remote, err := t.conn.ReadFromUDP(buf[:])
 			if err != nil {
 				if atomic.LoadInt32(&t.finish) == 1 {
@@ -340,9 +340,9 @@ func (t *TrapListener) reportAuthoritativeEngineID(trap *SnmpPacket, snmpEngineI
 	return t.SendUDP(reportPacket, addr)
 }
 
-func (t *TrapListener) handleTCPRequest(conn net.Conn) {
+func (t *TrapListener) handleTCPRequest(conn net.Conn, maxSize int64) {
 	// Make a buffer to hold incoming data.
-	buf := make([]byte, 8192)
+	buf := make([]byte, maxSize)
 	// Read the incoming connection into the buffer.
 	reqLen, err := conn.Read(buf)
 	if err != nil {
@@ -363,7 +363,7 @@ func (t *TrapListener) handleTCPRequest(conn net.Conn) {
 	conn.Close()
 }
 
-func (t *TrapListener) listenTCP(addr string) error {
+func (t *TrapListener) listenTCP(addr string, maxSize int64) error {
 	tcpAddr, err := net.ResolveTCPAddr(t.proto, addr)
 	if err != nil {
 		return err
@@ -394,7 +394,7 @@ func (t *TrapListener) listenTCP(addr string) error {
 				return err
 			}
 			// Handle connections in a new goroutine.
-			go t.handleTCPRequest(conn)
+			go t.handleTCPRequest(conn, maxSize)
 		}
 	}
 }
@@ -403,7 +403,7 @@ func (t *TrapListener) listenTCP(addr string) error {
 // function specified in *TrapListener for every trap received.
 //
 // NOTE: the trap code is currently unreliable when working with snmpv3 - pull requests welcome
-func (t *TrapListener) Listen(addr string) error {
+func (t *TrapListener) Listen(addr string, maxSize int64) error {
 	if t.Params == nil {
 		t.Params = Default
 	}
@@ -427,9 +427,9 @@ func (t *TrapListener) Listen(addr string) error {
 
 	switch t.proto {
 	case tcp:
-		return t.listenTCP(addr)
+		return t.listenTCP(addr, maxSize)
 	case udp:
-		return t.listenUDP(addr)
+		return t.listenUDP(addr, maxSize)
 	default:
 		return fmt.Errorf("not implemented network protocol: %s [use: tcp/udp]", t.proto)
 	}
