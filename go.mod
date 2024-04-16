@@ -1,4 +1,4 @@
-module github.com/saloni-vunet/gosnmp
+module github.com/saloni-vunet/gosnmp-test
 
 go 1.20
 
