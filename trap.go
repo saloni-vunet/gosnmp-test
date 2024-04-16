@@ -240,7 +240,7 @@ func (t *TrapListener) listenUDP(addr string, maxSize int64) error {
 			return nil
 
 		default:
-			var buf [maxSize]byte
+			buf := make([]byte, maxSize)
 			rlen, remote, err := t.conn.ReadFromUDP(buf[:])
 			if err != nil {
 				if atomic.LoadInt32(&t.finish) == 1 {
